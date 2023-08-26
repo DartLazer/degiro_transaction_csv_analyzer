@@ -74,7 +74,7 @@ def fetch_yearly_stock_prices(ticker, unique_years):
 
 
 def calculate_multi_year_gain() -> None:
-    filename = "Transactions(2).csv"
+    filename = "transactions.csv"
     df = pd.read_csv(filename)
     df['Datum'] = pd.to_datetime(df['Datum'], format='%d-%m-%Y')
     unique_stocks = df['Product'].unique()
