@@ -46,6 +46,54 @@ en/of,,Totaal,,Order ID`
 
 This script is created by [Rik Beernink](https://github.com/DartLazer) from [Sky-T](https://www.sky-t.nl).
 
+
+## Script Features
+Script currently prints the output in this format 
+```bash
+Calculating for ISHARES S&P 500
+==================================================
+Total Gain: 10.00% (€206.43)
+Total Invested: €2064.37
+Current Worth: €2270.80
+Stocks in possession today: 56
+Year 2020:
+  Virtual Gain 6.54.% (: €20.44)
+Year 2021:
+  Virtual Gain 30.05.% (: €174.49)
+Year 2022:
+  Virtual Gain -15.21.% (: €-114.84)
+Year 2023:
+  Virtual Gain 5.89.% (: €126.34)
+==================================================
+Calculating for VANGUARD S&P500
+==================================================
+Total Gain: 11.37% (€275.97)
+Total Invested: €2427.04
+Current Worth: €2703.01
+Stocks in possession today: 35
+Year 2020:
+  Virtual Gain 4.02.% (: €17.82)
+Year 2021:
+  Virtual Gain 30.42.% (: €261.18)
+Year 2022:
+  Virtual Gain -13.16.% (: €-174.49)
+Year 2023:
+  Virtual Gain 6.77.% (: €171.47)
+==================================================
+Calculating for ISHARES CORE MSCI WORLD UCITS ETF USD (ACC)
+==================================================
+Total Gain: 5.00% (€3.65)
+Total Invested: €73.06
+Current Worth: €76.71
+Stocks in possession today: 1
+Year 2022:
+  Virtual Gain -6.54.% (: €-4.77)
+Year 2023:
+  Virtual Gain 12.35.% (: €8.43)
+```
+
+Plans are to create a template and create a webpage using jinja and chartjs.
+
 ## Contributions
 
 Contributions to this script are welcome! If you'd like to contribute, follow these steps:
