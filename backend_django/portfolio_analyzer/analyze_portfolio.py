@@ -3,6 +3,7 @@ import pandas as pd
 from datetime import date
 import requests
 import json
+import io
 import yfinance as yf
 from typing import Optional, Dict, Union, List, Tuple
 
@@ -129,7 +130,19 @@ def calculate_yearly_gains(stock_df: pd.DataFrame, yearly_prices: Dict[int, Dict
     return yearly_gains
 
 
-def calculate_multi_year_gain() -> None:
+def calculate_yearly_worth(stock_df: pd.DataFrame, yearly_prices: Dict[int, Dict[str, float]],
+                           unique_years: List[int]) -> Dict[int, int]:
+    yearly_worth = {}  # Dictionary to store the worth of stocks at the end of each year
+    for year in unique_years:
+        end_of_year_stock_price = yearly_prices[year]['end_price']
+        all_years_upto_current_df = stock_df[stock_df['Datum'].dt.year <= year]
+        total_stocks_at_end_of_year = all_years_upto_current_df['Aantal'].sum()
+        end_of_year_worth = total_stocks_at_end_of_year * end_of_year_stock_price
+        yearly_worth[year] = int(end_of_year_worth)
+    return yearly_worth
+
+
+def calculate_multi_year_gain_old_version(csv_file) -> None:
     filename = "transactions.csv"
     df = pd.read_csv(filename)
     df['Datum'] = pd.to_datetime(df['Datum'], format='%d-%m-%Y')
@@ -168,6 +181,55 @@ def calculate_multi_year_gain() -> None:
         for year, data in yearly_gains.items():
             print(f"Year {year}:")
             print(f"  Virtual Gain {data['virtual_gain_percentage']:.2f}.% (: €{data['virtual_gain_value']:.2f})")
+
+
+def calculate_multi_year_gain(csv_file) -> dict:
+    csv_data = csv_file.read().decode('utf-8')
+    df = pd.read_csv(io.StringIO(csv_data))
+    df['Datum'] = pd.to_datetime(df['Datum'], format='%d-%m-%Y')
+    unique_stocks = df['Product'].unique()
+
+    results = []  # List to store results for each stock
+
+    for stock in unique_stocks:
+        stock_result = {}  # Dictionary to store results for the current stock
+
+        stock_df = df[df['Product'] == stock]
+        isin = stock_df['ISIN'].iloc[0]
+        ticker = isin_to_ticker(open_figi_api_key, isin)
+
+        if ticker is None:
+            stock_result['stock_name'] = stock
+            stock_result['error'] = f"Unable to find data for {isin}"
+            results.append(stock_result)
+            continue
+
+        complete_ticker = f"{ticker}.AS"
+
+        unique_years = populate_unique_years(stock_df)
+
+        yearly_prices = fetch_yearly_stock_prices(complete_ticker, unique_years)
+        final_stock_price = yearly_prices[unique_years[-1]]['end_price']
+
+        total_gain_percent, total_gain_value, final_worth = calculate_current_worth(stock_df, final_stock_price)
+
+        yearly_gains = calculate_yearly_gains(stock_df, yearly_prices, unique_years)
+
+        all_stocks_owned_today = stock_df['Aantal'].sum()
+        total_invested = stock_df['Waarde'].sum() * -1
+
+        stock_result['stock_name'] = stock
+        stock_result['total_gain_percent'] = total_gain_percent
+        stock_result['total_gain_value'] = total_gain_value
+        stock_result['total_invested'] = total_invested
+        stock_result['final_worth'] = final_worth
+        stock_result['stocks_in_possession'] = all_stocks_owned_today
+        stock_result['yearly_gains'] = yearly_gains
+        stock_result['yearly_worth'] = calculate_yearly_worth(stock_df, yearly_prices, unique_years)
+
+        results.append(stock_result)
+
+    return {'results': results}
 
 
 if __name__ == "__main__":
