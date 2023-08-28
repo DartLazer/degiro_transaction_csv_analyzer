@@ -1,59 +1,55 @@
 <template>
   <div class="chart-container">
-    <Line :data="chartData" :options="options"/>
+    <canvas ref="chartRef"></canvas>
   </div>
 </template>
 
 <script setup>
-import {Line} from 'vue-chartjs'
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend
-} from 'chart.js'
-
-ChartJS.register(
-    CategoryScale,
-    LinearScale,
-    PointElement,
-    LineElement,
-    Title,
-    Tooltip,
-    Legend
-)
+import ChartJS from 'chart.js/auto';
 const {labels, data} = defineProps(['labels', 'data'])
 
 
-const chartData = ref({
+const chartRef = ref(null);
+let myChart = null;
+
+const chartData = {
   labels: labels,
   datasets: [
     {
       label: 'Total Worth per year',
-      backgroundColor: 'rgba(75, 192, 192, 1)',  // Background color with transparency
+      backgroundColor: 'rgba(75, 192, 192, 0.2)',
       borderColor: 'rgba(75, 192, 192, 1)',
       borderWidth: 2,
-      data: data
-    }
-  ]
-})
+      data: data,
+      fill: 'origin',
+    },
+  ],
+};
 
-watch(() => labels, newVal => {
-  chartData.value.labels = newVal
-})
+onMounted(() => {
+  myChart = new ChartJS(chartRef.value.getContext('2d'), {
+    type: 'line',
+    data: chartData,
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+    },
+  });
+});
 
-watch(() => data, newVal => {
-  chartData.value.datasets[0].data = newVal
-})
+watch(() => labels, (newVal) => {
+  if (myChart) {
+    myChart.data.labels = newVal;
+    myChart.update();
+  }
+});
 
-const options = ref({
-  responsive: true,
-  maintainAspectRatio: false,
-})
+watch(() => data, (newVal) => {
+  if (myChart) {
+    myChart.data.datasets[0].data = newVal;
+    myChart.update();
+  }
+});
 
 </script>
 
