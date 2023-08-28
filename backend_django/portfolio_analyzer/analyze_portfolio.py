@@ -10,40 +10,6 @@ from typing import Optional, Dict, Union, List, Tuple
 open_figi_api_key = "paste_open_figi_api_key_here"
 
 
-def fetch_stock_price_yfinance(stock_ticker_and_exchange: str, date_to_fetch: str) -> Optional[float]:
-    """
-    Uses the yfinance library to get the closing stock price on the given date.
-    :param stock_ticker_and_exchange: stocker ticker and exchange in format VUSA.AS
-    :param date_to_fetch: date to fetch in string format
-    :return: The closing stock price of that or the nearest day (float) or None
-    """
-    try:
-        # Yfinance does not support querying a single day. The lowest unit it can query is a month.
-        # Hence, we will get the whole month and fetch our date of interest, if the date does not exist we pick the
-        # closest date.
-        start_date = (pd.to_datetime(date_to_fetch) - pd.DateOffset(days=15)).strftime('%Y-%m-%d')
-        end_date = (pd.to_datetime(date_to_fetch) + pd.DateOffset(days=15)).strftime('%Y-%m-%d')
-
-        # Query yfinance for the data
-        data = yf.download(stock_ticker_and_exchange, start=start_date, end=end_date, progress=False)
-
-        if data.empty:
-            return None
-
-        specific_date = pd.to_datetime(date_to_fetch)
-
-        if specific_date in data.index:
-            return data.at[specific_date, 'Adj Close']
-
-        # If the specific date doesn't exist in the data, find the closest date
-        closest_date_idx = np.argmin(np.abs(data.index - specific_date))
-        closest_date = data.index[closest_date_idx]
-        return data.at[closest_date, 'Adj Close']
-
-    except Exception:
-        return None
-
-
 def isin_to_ticker(openfigi_apikey: str, isin: str) -> Optional[str]:
     """
     Converts to ISIN code from the CSV file to a ticket. It openfigi has an api that can do exactly this
@@ -61,41 +27,51 @@ def isin_to_ticker(openfigi_apikey: str, isin: str) -> Optional[str]:
     return None
 
 
-def fetch_yearly_stock_prices(ticker: str, unique_years: list) -> Dict[int, Dict[str, Union[float, None]]]:
+def fetch_yearly_stock_prices(ticker: str, unique_years: List[int]) -> Dict[int, Dict[str, Union[float, None]]]:
     """
-    Function that takes in the unique years in which the data for stocks should be collected. It then returns a
-    dictionary that has the years as keys and the start and close prices of that stock for the year.
-    This function eliminates unnecessary API calls by setting the end date of the previous year as the start date of
-    the next.
+    Function that takes in the unique years in which the data for stocks should be collected.
+    It then returns a dictionary that has the years as keys and the start, mid, Q1 end, Q3 end, and close prices
+    of that stock for the year.
     :param ticker: ticker + exchange code (VUSA.AS)
     :param unique_years: list containing integers of the years to be fetched
-    :return: A dictionary containing a dictionary that returns the open and close prices for a given year
+    :return: A dictionary containing a dictionary that returns the open, mid, Q1 end, Q3 end, and close prices for a given year
     """
     yearly_prices = {}
-    prev_end_price = None  # To store the end price of the previous year
+    start_date = f"{min(unique_years)}-01-01"
+    end_date = f"{max(unique_years)}-12-31"
+
+    if pd.to_datetime(end_date) > pd.to_datetime(date.today()):
+        end_date = date.today().strftime('%Y-%m-%d')
+
+    data = yf.download(ticker, start=start_date, end=end_date, threads=True)
+
+    if data.empty:
+        return yearly_prices
 
     for year in unique_years:
-        end_date = f"{year}-12-31"
+        year_data = data.loc[f"{year}-01-01":f"{year}-12-31"]
 
-        # Check if the date exceeds the current date
-        if pd.to_datetime(end_date) > pd.to_datetime(date.today()):
-            end_date = date.today().strftime('%Y-%m-%d')
+        if not year_data.empty:
+            start_price = year_data.iloc[0]['Close']
 
-        end_price = fetch_stock_price_yfinance(ticker, end_date)
+            mid_price = year_data.loc[f"{year}-06-30":f"{year}-06-30"]['Close']
+            mid_price = mid_price.iloc[0] if not mid_price.empty else None
 
-        # If there's no previous end price, fetch the start price
-        if prev_end_price is None:
-            start_date = f"{year}-01-01"
-            start_price = fetch_stock_price_yfinance(ticker, start_date)
-        else:
-            start_price = prev_end_price
+            q1_end_price = year_data.loc[f"{year}-03-01":f"{year}-03-01"]['Close']
+            q1_end_price = q1_end_price.iloc[0] if not q1_end_price.empty else None
 
-        if end_price:
+            q3_end_price = year_data.loc[f"{year}-10-01":f"{year}-10-01"]['Close']
+            q3_end_price = q3_end_price.iloc[0] if not q3_end_price.empty else None
+
+            end_price = year_data.iloc[-1]['Close']
+
             yearly_prices[year] = {
                 'start_price': start_price,
+                'mid_price': mid_price,
+                'Q1_end': q1_end_price,
+                'Q3_end': q3_end_price,
                 'end_price': end_price
             }
-            prev_end_price = end_price  # Update for the next iteration
 
     return yearly_prices
 
@@ -176,22 +152,62 @@ def calculate_yearly_gains(stock_df: pd.DataFrame, yearly_prices: Dict[int, Dict
     return yearly_gains
 
 
+from typing import List, Dict
+import pandas as pd
+import datetime
+import time
+
+
 def calculate_yearly_worth(stock_df: pd.DataFrame, yearly_prices: Dict[int, Dict[str, float]],
                            unique_years: List[int]) -> Dict[int, int]:
     """
-    Calculates the value of the stock held at the end of the year for all the years the stock was in possession.
+    Calculates the value of the stock held at the end and mid of the year and at the end of Q1 and Q3 for all the years the stock was in possession.
     :param stock_df: CSV file contents for a specific stock in dataframe format
-    :param yearly_prices: Open and close prices per year dictionary for a given stock
+    :param yearly_prices: Open, mid, Q1_end, Q3_end, and close prices per year dictionary for a given stock
     :param unique_years: Years for which to calculate
-    :return: Dictionary containing the year as a key and the worth as value
+    :return: Dictionary containing the timestamp as a key and the worth as value
     """
-    yearly_worth = {}  # Dictionary to store the worth of stocks at the end of each year
+    yearly_worth = {}
+    current_year = pd.to_datetime(date.today()).year
+
     for year in unique_years:
+        # Handle end of year
+        end_of_year_timestamp = int(
+            time.mktime(datetime.datetime(year, 1, 1, 12, 0, tzinfo=datetime.timezone.utc).timetuple()))
         end_of_year_stock_price = yearly_prices[year]['end_price']
         all_years_upto_current_df = stock_df[stock_df['Datum'].dt.year <= year]
         total_stocks_at_end_of_year = all_years_upto_current_df['Aantal'].sum()
         end_of_year_worth = total_stocks_at_end_of_year * end_of_year_stock_price
-        yearly_worth[year] = int(end_of_year_worth)
+        yearly_worth[end_of_year_timestamp] = int(end_of_year_worth)
+
+        # Handle mid of year
+        if year == current_year and pd.to_datetime(f"{year}-06-30") > pd.to_datetime(date.today()):
+            continue
+        mid_of_year_timestamp = int(
+            time.mktime(datetime.datetime(year, 6, 30, 12, 0, tzinfo=datetime.timezone.utc).timetuple()))
+        mid_of_year_stock_price = yearly_prices[year]['mid_price']
+        total_stocks_at_mid_of_year = all_years_upto_current_df['Aantal'].sum()
+        mid_of_year_worth = total_stocks_at_mid_of_year * mid_of_year_stock_price
+        yearly_worth[mid_of_year_timestamp] = int(mid_of_year_worth)
+
+        # Handle end of Q1
+        q1_end_of_year_timestamp = int(
+            time.mktime(datetime.datetime(year, 3, 1, 12, 0, tzinfo=datetime.timezone.utc).timetuple()))
+        q1_end_of_year_stock_price = yearly_prices[year]['Q1_end']
+        if q1_end_of_year_stock_price:
+            total_stocks_at_q1_end_of_year = all_years_upto_current_df['Aantal'].sum()
+            q1_end_of_year_worth = total_stocks_at_q1_end_of_year * q1_end_of_year_stock_price
+            yearly_worth[q1_end_of_year_timestamp] = int(q1_end_of_year_worth) if q1_end_of_year_stock_price else None
+
+        # Handle end of Q3
+        q3_end_of_year_timestamp = int(
+            time.mktime(datetime.datetime(year, 10, 1, 12, 0, tzinfo=datetime.timezone.utc).timetuple()))
+        q3_end_of_year_stock_price = yearly_prices[year]['Q3_end']
+        if q3_end_of_year_stock_price:
+            total_stocks_at_q3_end_of_year = all_years_upto_current_df['Aantal'].sum()
+            q3_end_of_year_worth = total_stocks_at_q3_end_of_year * q3_end_of_year_stock_price
+            yearly_worth[q3_end_of_year_timestamp] = int(q3_end_of_year_worth) if q3_end_of_year_stock_price else None
+
     return yearly_worth
 
 
@@ -260,7 +276,7 @@ def calculate_multi_year_gain(csv_file) -> dict:
     summary = {
         'total_worth': round(total_worth_all_stocks, 2),
         'total_gain': round(total_gain_all_stocks, 2),
-        'total_gain_percentage': round((total_worth_all_stocks / total_invested_all_stocks  - 1) * 100, 2)
+        'total_gain_percentage': round((total_worth_all_stocks / total_invested_all_stocks - 1) * 100, 2)
     }
 
     return {'results': results, 'summary': summary}
