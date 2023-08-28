@@ -4,7 +4,7 @@
          style="background: RGBA(248, 249, 250, 0.5)">
       <div class="container">
         <NuxtLink class="navbar-brand" to="/">
-          Degiro Stock Analyzer
+          CSV Stock Analyzer
         </NuxtLink>
         <button class="navbar-toggler collapsed" type="button" data-bs-toggle="collapse"
                 data-bs-target="#navbarsExample07" aria-controls="navbarsExample07" aria-expanded="false"
@@ -22,6 +22,11 @@
             <li class="nav-item">
               <NuxtLink @click.native="collapseNavbar" class="nav-link" exact-active-class="active"
                         to="/about">About
+              </NuxtLink>
+            </li>
+            <li class="nav-item">
+              <NuxtLink @click.native="collapseNavbar" class="nav-link" exact-active-class="active"
+                        to="/instructions">Instructions
               </NuxtLink>
             </li>
           </ul>

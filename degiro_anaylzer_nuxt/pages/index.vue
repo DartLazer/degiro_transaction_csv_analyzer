@@ -31,6 +31,7 @@
             <input type="file" @change="handleFileSelect" accept=".csv" class="form-control mb-3"/>
             <button @click="uploadCsvFile" class="btn btn-primary mb-5">Upload File</button>
           </div>
+          <disclaimer />
         </div>
       </transition>
 
@@ -48,6 +49,7 @@
 
 <script setup>
 import axios from 'axios'
+import Disclaimer from "~/components/disclaimer.vue";
 
 
 const selectedFile = ref(null)
@@ -74,7 +76,7 @@ const uploadCsvFile = async () => {
   formData.append('csv_file', selectedFile.value, selectedFile.value.name)
 
   try {
-    const response = await axios.post('http://192.168.2.112:8000/calculate_multi_year_gain/', formData, {
+    const response = await axios.post('http://192.168.2.1:8000/calculate_multi_year_gain/', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
