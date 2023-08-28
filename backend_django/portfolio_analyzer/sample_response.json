@@ -1,0 +1,91 @@
+{
+    "results": [
+        {
+            "stock_name": "ISHARES S&P 500",
+            "total_gain_percent": 9.999658843879256,
+            "total_gain_value": 206.42995727539028,
+            "total_invested": 2064.3700000000003,
+            "final_worth": 2270.7999572753906,
+            "stocks_in_possession": 56,
+            "yearly_gains": {
+                "2020": {
+                    "virtual_gain_value": 20.44100151062014,
+                    "virtual_gain_percentage": 6.537982251917525
+                },
+                "2021": {
+                    "virtual_gain_value": 174.48903144836424,
+                    "virtual_gain_percentage": 30.04799905535777
+                },
+                "2022": {
+                    "virtual_gain_value": -114.84001922607422,
+                    "virtual_gain_percentage": -15.206771039616113
+                },
+                "2023": {
+                    "virtual_gain_value": 126.33994354248034,
+                    "virtual_gain_percentage": 5.891457184252064
+                }
+            },
+            "yearly_worth": {
+                "2020": 333,
+                "2021": 755,
+                "2022": 640,
+                "2023": 2270
+            }
+        },
+        {
+            "stock_name": "VANGUARD S&P500",
+            "total_gain_percent": 11.370841423707123,
+            "total_gain_value": 275.97486968994144,
+            "total_invested": 2427.04,
+            "final_worth": 2703.0148696899414,
+            "stocks_in_possession": 35,
+            "yearly_gains": {
+                "2020": {
+                    "virtual_gain_value": 17.822011718750048,
+                    "virtual_gain_percentage": 4.0185825427292725
+                },
+                "2021": {
+                    "virtual_gain_value": 261.17598144531246,
+                    "virtual_gain_percentage": 30.41733084111673
+                },
+                "2022": {
+                    "virtual_gain_value": -174.49399108886718,
+                    "virtual_gain_percentage": -13.161729049773019
+                },
+                "2023": {
+                    "virtual_gain_value": 171.4708676147461,
+                    "virtual_gain_percentage": 6.77337101287536
+                }
+            },
+            "yearly_worth": {
+                "2020": 461,
+                "2021": 1119,
+                "2022": 1151,
+                "2023": 2703
+            }
+        },
+        {
+            "stock_name": "ISHARES CORE MSCI WORLD UCITS ETF USD (ACC)",
+            "total_gain_percent": 5.002732463578741,
+            "total_gain_value": 3.6549963378906227,
+            "total_invested": 73.06,
+            "final_worth": 76.71499633789062,
+            "stocks_in_possession": 1,
+            "yearly_gains": {
+                "2022": {
+                    "virtual_gain_value": -4.774996337890627,
+                    "virtual_gain_percentage": -6.53571904994611
+                },
+                "2023": {
+                    "virtual_gain_value": 8.42999267578125,
+                    "virtual_gain_percentage": 12.345306031606707
+                }
+            },
+            "yearly_worth": {
+                "2022": 68,
+                "2023": 76
+            }
+        }
+    ],
+    "summary": {"total_worth" : 4890, "total_gain":  500, "total_gain_percentage": 5.3}
+}
