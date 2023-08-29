@@ -280,3 +280,9 @@ def calculate_multi_year_gain(csv_file) -> dict:
     }
 
     return {'results': results, 'summary': summary}
+
+
+if __name__ == "__main__":
+    with open('transactions.csv', 'rb') as f:
+        result = calculate_multi_year_gain(f)
+        print(result)

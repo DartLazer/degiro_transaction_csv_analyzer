@@ -23,6 +23,7 @@
           <p>
             Please upload your CSV file here.
           </p>
+          <h2 style="color: red;" v-if="errorMessage">{{ errorMessage }}</h2>
           <NuxtLink class="small link-secondary" to="/instructions">Click here to see the instructions on how to get the
             csv
             file
@@ -31,7 +32,7 @@
             <input type="file" @change="handleFileSelect" accept=".csv" class="form-control mb-3"/>
             <button @click="uploadCsvFile" class="btn btn-primary mb-5">Upload File</button>
           </div>
-          <disclaimer />
+          <disclaimer/>
         </div>
       </transition>
 
@@ -56,6 +57,7 @@ const selectedFile = ref(null)
 const serverResponse = ref(null)
 const isLoading = ref(false)
 const showFileUpload = ref(true)
+const errorMessage = ref(null)
 const handleFileSelect = (event) => {
   selectedFile.value = event.target.files[0]
 }
@@ -76,7 +78,7 @@ const uploadCsvFile = async () => {
   formData.append('csv_file', selectedFile.value, selectedFile.value.name)
 
   try {
-    const response = await axios.post('http://192.168.2.1:8000/calculate_multi_year_gain/', formData, {
+    const response = await axios.post('http://localhost:8000/calculate_multi_year_gain/', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
@@ -86,12 +88,15 @@ const uploadCsvFile = async () => {
     console.log('Server Response:', response.data)
   } catch (error) {
     console.log('Error uploading file:', error)
+    errorMessage.value = "Error connecting to server"
     stillLoading = false
     showFileUpload.value = true
     isLoading.value = false
   } finally {
     isLoading.value = false
-    showFileUpload.value = false
+    if (!errorMessage) {
+      showFileUpload.value = false
+    }
   }
 }
 </script>

@@ -12,5 +12,4 @@ export default defineNuxtConfig({
         },
         pageTransition: {name: 'page', mode: 'out-in'},
     },
-    devtools: {enabled: true},
 })
