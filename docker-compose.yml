@@ -1,0 +1,28 @@
+version: '3.9'
+
+services:
+  csv_analyzer_nuxt:
+    build:
+      context: .
+      dockerfile: Nuxt3Dockerfile
+    command: npm run dev -- --port 3035 --host 0.0.0.0
+    ports:
+      - 3035:3035
+    environment:
+      - NODE_ENV=production
+    restart: always
+
+  csv_analyzer_django_api:
+    build:
+      context: ./backend_django
+      dockerfile: ApiDjangoDockerfile
+    command: bash -c "python manage.py makemigrations && python manage.py migrate && python manage.py runserver 0.0.0.0:8000 "
+    ports:
+      - 8000:8000
+#    env_file:
+#      - config_files/env.dev
+    restart: unless-stopped
+    working_dir: /code
+
+
+
