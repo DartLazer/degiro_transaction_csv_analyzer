@@ -7,7 +7,7 @@ services:
       dockerfile: Nuxt3Dockerfile
     command: nginx -g 'daemon off;'
     ports:
-      - 3035:3035
+      - 3035:80
     environment:
       - NODE_ENV=production
       - API_ADDRESS=csv-api.sky-t.nl
