@@ -9,5 +9,9 @@ class CalculateMultiYearGainView(APIView):  # Use FileUploadParser for handling 
 
     def post(self, request, *args, **kwargs):
         csv_file = request.data['csv_file']  # Access the uploaded file from the request data
-        results = calculate_multi_year_gain(csv_file)  # Call your function with the csv_file
-        return Response(results, status=status.HTTP_200_OK)  # Return the results as JSON response
+        try:
+            results = calculate_multi_year_gain(csv_file)  # Call your function with the csv_file
+            return Response(results, status=status.HTTP_200_OK)  # Return the results as JSON response
+        except ValueError as e:
+            return Response({"error": 'Inccorect CSV File'}, status=status.HTTP_400_BAD_REQUEST)
+
