@@ -1,10 +1,7 @@
 import axios from 'axios';
 
-// Address of the API service, localhost:8000 when running locally in docker
-const apiAddress = 'localhost:8000'
-
-// Time to wait for response on the server
-const customTimeout = 5000
+const { public: { apiAddress } } = useRuntimeConfig();
+const customTimeout = 5000;
 
 export const uploadCsv = async (selectedFile) => {
   const formData = new FormData();

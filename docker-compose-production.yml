@@ -10,6 +10,7 @@ services:
       - 3035:3035
     environment:
       - NODE_ENV=production
+      - API_ADDRESS=csv_api.sky-t.nl
     restart: always
 
   csv_analyzer_django_api:
