@@ -12,6 +12,9 @@ services:
       - NODE_ENV=production
       - API_ADDRESS=csv-api.sky-t.nl
     restart: always
+    networks:
+      - csv_analyzer_network
+      - npm-nw
 
   csv_analyzer_django_api:
     build:
@@ -24,3 +27,11 @@ services:
       - backend_django/config_files/env.prod
     restart: unless-stopped
     working_dir: /code
+    networks:
+      - csv_analyzer_network
+      - npm-nw
+
+networks:
+  csv_analyzer_network:
+  npm-nw:
+    external: true
