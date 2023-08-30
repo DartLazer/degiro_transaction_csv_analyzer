@@ -50,7 +50,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'degiro_portfolio_api.limit_file_upload_size',
+    'degiro_portfolio_api.limit_file_upload_size.LimitUploadSizeMiddleware',
 ]
 
 ROOT_URLCONF = 'degiro_portfolio_api.urls'
