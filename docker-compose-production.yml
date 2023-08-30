@@ -21,6 +21,6 @@ services:
     ports:
       - 8000:8000
     env_file:
-      - config_files/env.prod
+      - backend_django/config_files/env.prod
     restart: unless-stopped
     working_dir: /code
