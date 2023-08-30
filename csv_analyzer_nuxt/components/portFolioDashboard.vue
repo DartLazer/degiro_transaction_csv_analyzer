@@ -13,6 +13,9 @@
                 <span :style="{ color: stockData.summary.total_gain_percentage < 0 ? 'red' : 'green' }"> {{
                     stockData.summary.total_gain_percentage
                   }} % (€ {{ stockData.summary.total_gain }})</span></p>
+              <p><strong>Total Invested: {{stockData.summary.total_invested_all_stocks}}</strong></p>
+              <p><strong>Total realized gain: {{stockData.summary.total_realized_gain}}</strong></p>
+
               <hr/>
               <LineChart
                   :labels="Object.keys(stockData.summary.yearly_worths_whole_portfolio)"
@@ -39,6 +42,7 @@
                 <p><strong>Total Invested: </strong>€ {{ stock.total_invested.toFixed(2) }}</p>
                 <p><strong>Current Worth: </strong>€ {{ stock.final_worth.toFixed(2) }}</p>
                 <p><strong>Stocks in Possession: </strong>{{ stock.stocks_in_possession }}</p>
+                <p><strong>Realized Gain: </strong>{{ stock.realized_gain }}</p>
               </div>
               <hr/>
 

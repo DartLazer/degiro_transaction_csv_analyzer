@@ -258,25 +258,45 @@ def calculate_total_portfolio_yearly_growth(yearly_worths_list: list) -> Dict[in
     return yearly_growth
 
 
+def calculate_realized_gain(stock_df: pd.DataFrame) -> float:
+    """
+    Calculates the realized gain for a given stock.
+    :param stock_df: CSV file contents for a specific stock in dataframe format
+    :return: A float representing the realized gain
+    """
+    # Filter out selling transactions, identified by a negative 'Aantal'
+    sell_df = stock_df[stock_df['Aantal'] < 0]
+
+    # Calculate realized gain
+    realized_gain = (sell_df['Aantal'] * sell_df['Koers']).sum() * -1
+    return realized_gain
+
+
 def calculate_multi_year_gain(csv_file) -> dict:
     df = check_and_convert_csv_headers(csv_file)
 
     df['Datum'] = pd.to_datetime(df['Datum'], format='%d-%m-%Y')
     unique_stocks = df['Product'].unique()
 
-    exchange_codes = ['AS', 'DE', 'XC', 'L', 'AQ']
+    exchange_codes = ['AS', 'DE', 'XC','MI', 'XD', 'AQ', 'L']
 
     results = []  # List to store results for each stock
     total_worth_all_stocks = 0
     total_gain_all_stocks = 0
     total_invested_all_stocks = 0
+    total_realized_gain = 0
 
     for stock in unique_stocks:
         stock_result = {}  # Dictionary to store results for the current stock
 
         stock_df = df[df['Product'] == stock]
+
+        realized_gain = calculate_realized_gain(stock_df)
+        total_realized_gain += realized_gain
+
         isin = stock_df['ISIN'].iloc[0]
         ticker = isin_to_ticker(open_figi_api_key, isin)
+        print(ticker)
 
         if ticker is None:
             stock_result['stock_name'] = stock
@@ -305,9 +325,10 @@ def calculate_multi_year_gain(csv_file) -> dict:
         yearly_gains = calculate_yearly_gains(stock_df, yearly_prices, unique_years)
 
         all_stocks_owned_today = stock_df['Aantal'].sum()
-        total_invested = stock_df['Waarde'].sum() * -1
+        total_invested = stock_df[stock_df['Waarde'] < 0]['Waarde'].sum() * -1
 
-        total_invested_all_stocks += total_invested
+        if total_invested > 0:
+            total_invested_all_stocks += total_invested
 
         stock_result['stock_name'] = stock
         stock_result['total_gain_percent'] = total_gain_percent
@@ -317,6 +338,7 @@ def calculate_multi_year_gain(csv_file) -> dict:
         stock_result['stocks_in_possession'] = all_stocks_owned_today
         stock_result['yearly_gains'] = yearly_gains
         stock_result['yearly_worth'] = calculate_yearly_worth(stock_df, yearly_prices, unique_years)
+        stock_result['realized_gain'] = realized_gain
 
         results.append(stock_result)
 
@@ -326,7 +348,9 @@ def calculate_multi_year_gain(csv_file) -> dict:
         'total_worth': round(total_worth_all_stocks, 2),
         'total_gain': round(total_gain_all_stocks, 2),
         'total_gain_percentage': round((total_worth_all_stocks / total_invested_all_stocks - 1) * 100, 2),
-        'yearly_worths_whole_portfolio': calculate_total_portfolio_yearly_growth(yearly_worths_list)
+        'total_invested_all_stocks': total_invested_all_stocks,
+        'total_realized_gain': total_realized_gain,
+        'yearly_worths_whole_portfolio': calculate_total_portfolio_yearly_growth(yearly_worths_list),
     }
 
     return {'results': results, 'summary': summary}
