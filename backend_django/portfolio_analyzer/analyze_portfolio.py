@@ -240,6 +240,24 @@ def calculate_yearly_worth(stock_df: pd.DataFrame, yearly_prices: Dict[int, Dict
     return yearly_worth
 
 
+def calculate_total_portfolio_yearly_growth(yearly_worths_list: list) -> Dict[int, int]:
+    """
+    Calculate the total yearly growth for multiple portfolios.
+    The function assumes that all portfolios have the same year labels.
+
+    Parameters:
+    yearly_worths_list: A list of dictionaries created for the whole portfolio by calculate_yearly_worth
+
+    Returns:
+    Dict[int, int]: A dictionary representing the total yearly growth, with years as keys and total worth as values.
+    """
+    yearly_growth = {}
+    for yearly_worth in yearly_worths_list:
+        for year, worth in yearly_worth.items():
+            yearly_growth[year] = yearly_growth.get(year, 0) + worth
+    return yearly_growth
+
+
 def calculate_multi_year_gain(csv_file) -> dict:
     df = check_and_convert_csv_headers(csv_file)
 
@@ -302,10 +320,13 @@ def calculate_multi_year_gain(csv_file) -> dict:
 
         results.append(stock_result)
 
+    yearly_worths_list = [stock['yearly_worth'] for stock in results]
+
     summary = {
         'total_worth': round(total_worth_all_stocks, 2),
         'total_gain': round(total_gain_all_stocks, 2),
-        'total_gain_percentage': round((total_worth_all_stocks / total_invested_all_stocks - 1) * 100, 2)
+        'total_gain_percentage': round((total_worth_all_stocks / total_invested_all_stocks - 1) * 100, 2),
+        'yearly_worths_whole_portfolio': calculate_total_portfolio_yearly_growth(yearly_worths_list)
     }
 
     return {'results': results, 'summary': summary}

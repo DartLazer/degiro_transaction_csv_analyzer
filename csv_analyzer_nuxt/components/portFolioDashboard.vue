@@ -2,15 +2,25 @@
   <div>
     <div class="row">
       <div class="col-md-12">
-        <h2 class="padding-left-5 pb-3">Portfolio overview</h2>
-        <h5 class="padding-left-5"> Total portfolio worth: {{ stockData.summary.total_worth }}</h5>
-        <h5 class="padding-left-5">
-          Total portfolio gain:
-          <span
-              :style="{ color: stockData.summary.total_gain_percentage < 0 ? 'red' : 'green' }">
-          {{ stockData.summary.total_gain_percentage }} % (€ {{ stockData.summary.total_gain }})
-        </span>
-        </h5>
+        <div class="card mb-3">
+          <div class="card-header">
+            <h4 class="pt-2">Portfolio Overview</h4>
+          </div>
+          <div class="card-body">
+            <div class="padding-left-5">
+              <p><strong>Total portfolio worth:</strong> {{ stockData.summary.total_worth }}</p>
+              <p><strong>Total portfolio gain: </strong>
+                <span :style="{ color: stockData.summary.total_gain_percentage < 0 ? 'red' : 'green' }"> {{
+                    stockData.summary.total_gain_percentage
+                  }} % (€ {{ stockData.summary.total_gain }})</span></p>
+              <hr/>
+              <LineChart
+                  :labels="Object.keys(stockData.summary.yearly_worths_whole_portfolio)"
+                  :data="Object.values(stockData.summary.yearly_worths_whole_portfolio)"
+              />
+            </div>
+          </div>
+        </div>
         <div v-for="stock in stockData.results" :key="stock.stock_name">
           <div class="card mb-3">
             <div class="card-header">
