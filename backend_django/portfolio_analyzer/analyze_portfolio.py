@@ -1,10 +1,11 @@
-import pandas as pd
-from datetime import date
+from datetime import date, datetime, timezone
+import time
+import io
+from typing import Optional, Dict, Union, List, Tuple, IO
 import requests
 import json
-import io
+import pandas as pd
 import yfinance as yf
-from typing import Optional, Dict, Union, List, Tuple, IO
 
 open_figi_api_key = "paste_open_figi_api_key_here"
 
@@ -12,7 +13,8 @@ open_figi_api_key = "paste_open_figi_api_key_here"
 def check_and_convert_csv_headers(csv_file: IO[str]) -> pd.DataFrame:
     """
     The degiro app may export the headers in a different language that may break this script depending on app lanuage.
-    This functions checks if the headers are correct (Dutch) If they are not they convert the headers to Dutch if the length of the headers is the same.
+    This functions checks if the headers are correct (Dutch) If they are not they convert the headers to Dutch if the
+    length of the headers is the same.
 
     Raises a ValueError if the CSV file headers are neither matching nor have
     the same column count as the expected headers.
@@ -27,7 +29,8 @@ def check_and_convert_csv_headers(csv_file: IO[str]) -> pd.DataFrame:
     csv_data = csv_file.read().decode('utf-8')
     df = pd.read_csv(io.StringIO(csv_data))
 
-    expected_headers = "Datum,Tijd,Product,ISIN,Beurs,Uitvoeringsplaats,Aantal,Koers,,Lokale waarde,,Waarde,,Wisselkoers,Transactiekosten en/of,,Totaal,,Order ID"
+    expected_headers = ("Datum,Tijd,Product,ISIN,Beurs,Uitvoeringsplaats,Aantal,Koers,,Lokale waarde,,Waarde,,"
+                        "Wisselkoers,Transactiekosten en/of,,Totaal,,Order ID")
     expected_headers_list = expected_headers.split(',')
 
     if ','.join(df.columns) == expected_headers:
@@ -64,7 +67,8 @@ def fetch_yearly_stock_prices(ticker: str, unique_years: List[int]) -> Dict[int,
     of that stock for the year.
     :param ticker: ticker + exchange code (VUSA.AS)
     :param unique_years: list containing integers of the years to be fetched
-    :return: A dictionary containing a dictionary that returns the open, mid, Q1 end, Q3 end, and close prices for a given year
+    :return: A dictionary containing a dictionary that returns the open, mid, Q1 end, Q3 end, and
+    close prices for a given year
     """
     yearly_prices = {}
     start_date = f"{min(unique_years)}-01-01"
@@ -182,16 +186,11 @@ def calculate_yearly_gains(stock_df: pd.DataFrame, yearly_prices: Dict[int, Dict
     return yearly_gains
 
 
-from typing import List, Dict
-import pandas as pd
-import datetime
-import time
-
-
 def calculate_yearly_worth(stock_df: pd.DataFrame, yearly_prices: Dict[int, Dict[str, float]],
                            unique_years: List[int]) -> Dict[int, int]:
     """
-    Calculates the value of the stock held at the end and mid of the year and at the end of Q1 and Q3 for all the years the stock was in possession.
+    Calculates the value of the stock held at the end and mid of the year and at the end of Q1 and Q3 for all the years
+    the stock was in possession.
     :param stock_df: CSV file contents for a specific stock in dataframe format
     :param yearly_prices: Open, mid, Q1_end, Q3_end, and close prices per year dictionary for a given stock
     :param unique_years: Years for which to calculate
@@ -203,7 +202,7 @@ def calculate_yearly_worth(stock_df: pd.DataFrame, yearly_prices: Dict[int, Dict
     for year in unique_years:
         # Handle end of year
         end_of_year_timestamp = int(
-            time.mktime(datetime.datetime(year, 1, 1, 12, 0, tzinfo=datetime.timezone.utc).timetuple()))
+            time.mktime(datetime(year, 1, 1, 12, 0, tzinfo=timezone.utc).timetuple()))
         end_of_year_stock_price = yearly_prices[year]['end_price']
         all_years_upto_current_df = stock_df[stock_df['Datum'].dt.year <= year]
         total_stocks_at_end_of_year = all_years_upto_current_df['Aantal'].sum()
@@ -214,7 +213,7 @@ def calculate_yearly_worth(stock_df: pd.DataFrame, yearly_prices: Dict[int, Dict
         if year == current_year and pd.to_datetime(f"{year}-06-30") > pd.to_datetime(date.today()):
             continue
         mid_of_year_timestamp = int(
-            time.mktime(datetime.datetime(year, 6, 30, 12, 0, tzinfo=datetime.timezone.utc).timetuple()))
+            time.mktime(datetime(year, 6, 30, 12, 0, tzinfo=timezone.utc).timetuple()))
         mid_of_year_stock_price = yearly_prices[year]['mid_price']
         total_stocks_at_mid_of_year = all_years_upto_current_df['Aantal'].sum()
         mid_of_year_worth = total_stocks_at_mid_of_year * mid_of_year_stock_price
@@ -222,7 +221,7 @@ def calculate_yearly_worth(stock_df: pd.DataFrame, yearly_prices: Dict[int, Dict
 
         # Handle end of Q1
         q1_end_of_year_timestamp = int(
-            time.mktime(datetime.datetime(year, 3, 1, 12, 0, tzinfo=datetime.timezone.utc).timetuple()))
+            time.mktime(datetime(year, 3, 1, 12, 0, tzinfo=timezone.utc).timetuple()))
         q1_end_of_year_stock_price = yearly_prices[year]['Q1_end']
         if q1_end_of_year_stock_price:
             total_stocks_at_q1_end_of_year = all_years_upto_current_df['Aantal'].sum()
@@ -231,7 +230,7 @@ def calculate_yearly_worth(stock_df: pd.DataFrame, yearly_prices: Dict[int, Dict
 
         # Handle end of Q3
         q3_end_of_year_timestamp = int(
-            time.mktime(datetime.datetime(year, 10, 1, 12, 0, tzinfo=datetime.timezone.utc).timetuple()))
+            time.mktime(datetime(year, 10, 1, 12, 0, tzinfo=timezone.utc).timetuple()))
         q3_end_of_year_stock_price = yearly_prices[year]['Q3_end']
         if q3_end_of_year_stock_price:
             total_stocks_at_q3_end_of_year = all_years_upto_current_df['Aantal'].sum()
