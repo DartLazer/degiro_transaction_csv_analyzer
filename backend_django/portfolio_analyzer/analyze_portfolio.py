@@ -1,13 +1,43 @@
-import numpy as np
 import pandas as pd
 from datetime import date
 import requests
 import json
 import io
 import yfinance as yf
-from typing import Optional, Dict, Union, List, Tuple
+from typing import Optional, Dict, Union, List, Tuple, IO
 
 open_figi_api_key = "paste_open_figi_api_key_here"
+
+
+def check_and_convert_csv_headers(csv_file: IO[str]) -> pd.DataFrame:
+    """
+    The degiro app may export the headers in a different language that may break this script depending on app lanuage.
+    This functions checks if the headers are correct (Dutch) If they are not they convert the headers to Dutch if the length of the headers is the same.
+
+    Raises a ValueError if the CSV file headers are neither matching nor have
+    the same column count as the expected headers.
+
+    Args:
+        csv_file (IO[str]): The input CSV file.
+
+    Returns:
+        pd.DataFrame: A DataFrame with standardized headers.
+    """
+
+    csv_data = csv_file.read().decode('utf-8')
+    df = pd.read_csv(io.StringIO(csv_data))
+
+    expected_headers = "Datum,Tijd,Product,ISIN,Beurs,Uitvoeringsplaats,Aantal,Koers,,Lokale waarde,,Waarde,,Wisselkoers,Transactiekosten en/of,,Totaal,,Order ID"
+    expected_headers_list = expected_headers.split(',')
+
+    if ','.join(df.columns) == expected_headers:
+        return df
+    elif len(df.columns) == len(expected_headers_list):
+        df.columns = expected_headers_list
+        return df
+    else:
+        raise ValueError(
+            "The CSV file headers are not as expected and their count does not match the expected headers.")
 
 
 def isin_to_ticker(openfigi_apikey: str, isin: str) -> Optional[str]:
@@ -212,8 +242,8 @@ def calculate_yearly_worth(stock_df: pd.DataFrame, yearly_prices: Dict[int, Dict
 
 
 def calculate_multi_year_gain(csv_file) -> dict:
-    csv_data = csv_file.read().decode('utf-8')
-    df = pd.read_csv(io.StringIO(csv_data))
+    df = check_and_convert_csv_headers(csv_file)
+
     df['Datum'] = pd.to_datetime(df['Datum'], format='%d-%m-%Y')
     unique_stocks = df['Product'].unique()
 
