@@ -5,7 +5,7 @@ services:
     build:
       context: .
       dockerfile: Nuxt3Dockerfile
-    command: npx nuxt start
+    command: npm run build
     ports:
       - 3035:3035
     environment:
