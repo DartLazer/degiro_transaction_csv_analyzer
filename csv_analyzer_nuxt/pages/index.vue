@@ -49,7 +49,7 @@
 </template>
 
 <script setup>
-import axios from 'axios'
+import {uploadCsv} from "~/services/apiService";
 import Disclaimer from "~/components/disclaimer.vue";
 
 
@@ -62,43 +62,47 @@ const handleFileSelect = (event) => {
   selectedFile.value = event.target.files[0]
 }
 
+const startLoading = (timeout, stillLoadingRef) => {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      if (stillLoadingRef.value) {
+        isLoading.value = true;
+      }
+      resolve();
+    }, timeout);
+  });
+};
+
 const uploadCsvFile = async () => {
-  if (!selectedFile.value) return
-  let stillLoading = true
-  setTimeout(() => {
-    if (stillLoading) {
-      console.log(stillLoading)
-      isLoading.value = true
-    }
-  }, 700)
+  if (!selectedFile.value) return;
 
-  showFileUpload.value = false
+  const stillLoading = ref(true);
 
-  const formData = new FormData()
-  formData.append('csv_file', selectedFile.value, selectedFile.value.name)
+  showFileUpload.value = false;
 
-  try {
-    const response = await axios.post('http://localhost:8000/calculate_multi_year_gain/', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    })
-    serverResponse.value = response.data
-    stillLoading = false
-    console.log('Server Response:', response.data)
-  } catch (error) {
-    console.log('Error uploading file:', error)
-    errorMessage.value = "Error connecting to server"
-    stillLoading = false
-    showFileUpload.value = true
-    isLoading.value = false
-  } finally {
-    isLoading.value = false
-    if (!errorMessage) {
-      showFileUpload.value = false
-    }
+  await startLoading(700, stillLoading);
+
+
+  const { data, error } = await uploadCsv(selectedFile.value);
+
+  if (data) {
+    serverResponse.value = data;
+    console.log('Server Response:', data);
   }
-}
+
+  if (error) {
+    errorMessage.value = error;
+    console.log('Error uploading file:', error);
+    showFileUpload.value = true;
+  }
+
+  stillLoading.value = false;
+  isLoading.value = false;
+
+  if (!errorMessage.value) {
+    showFileUpload.value = false;
+  }
+};
 </script>
 
 <style scoped>
