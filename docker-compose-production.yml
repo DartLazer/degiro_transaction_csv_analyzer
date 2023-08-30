@@ -1,0 +1,25 @@
+version: '3.9'
+
+services:
+  csv_analyzer_nuxt:
+    build:
+      context: .
+      dockerfile: Nuxt3Dockerfile
+    command: npm run build
+    ports:
+      - 3035:3035
+    environment:
+      - NODE_ENV=production
+    restart: always
+
+  csv_analyzer_django_api:
+    build:
+      context: ./backend_django
+      dockerfile: ApiDjangoDockerfileProduction
+    command: bash -c "gunicorn degiro_portfolio_api.wsgi:application --bind 0.0.0.0:8000"
+    ports:
+      - 8000:8000
+    env_file:
+      - config_files/env.prod
+    restart: unless-stopped
+    working_dir: /code
