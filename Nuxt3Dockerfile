@@ -1,20 +1,13 @@
-# Base image
-FROM node:16-alpine
-
-# Set working directory
+# Build stage
+FROM node:16-alpine AS build
 WORKDIR /app
-
-# Copy package.json and package-lock.json
 COPY csv_analyzer_nuxt/package*.json ./
-
-# Install dependencies
 RUN npm install
-
-# Copy source files
 COPY csv_analyzer_nuxt/ .
+RUN npm run generate
 
-# Build the project for production
-RUN npm run build
-
-# Start the application in production mode
-# CMD ["npm", "run", "start"]
+# Serve stage
+FROM nginx:alpine
+COPY --from=build /app/dist /usr/share/nginx/html
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
