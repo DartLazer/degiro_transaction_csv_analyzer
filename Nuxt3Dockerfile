@@ -17,4 +17,4 @@ COPY csv_analyzer_nuxt/ .
 RUN npm run build
 
 # Start the application in production mode
-# CMD ["npx", "nuxt", "start"]
+# CMD ["npm", "run", "start"]
