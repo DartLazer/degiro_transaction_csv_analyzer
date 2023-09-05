@@ -169,6 +169,11 @@ def calculate_yearly_gains(stock_df: pd.DataFrame, yearly_prices: Dict[int, Dict
 
         all_years_upto_current_df = stock_df[stock_df['Datum'].dt.year <= year]
         total_stocks_at_end_of_year = all_years_upto_current_df['Aantal'].sum()
+
+        # Skip if no stocks are held for a full year
+        if total_stocks_previous_year == 0 and total_stocks_at_end_of_year == 0:
+            continue
+
         # Calculate the worth of stocks at the end of the year
         end_of_year_worth = total_stocks_at_end_of_year * end_of_year_stock_price
 
@@ -268,8 +273,8 @@ def calculate_realized_gain(stock_df: pd.DataFrame) -> float:
     sell_df = stock_df[stock_df['Aantal'] < 0]
 
     # Calculate realized gain
-    realized_gain = (sell_df['Aantal'] * sell_df['Koers']).sum() * -1
-    return realized_gain
+    realized_gain = sell_df['Waarde'].sum()
+    return round(realized_gain, 3)
 
 
 def calculate_multi_year_gain(csv_file) -> dict:
@@ -278,7 +283,7 @@ def calculate_multi_year_gain(csv_file) -> dict:
     df['Datum'] = pd.to_datetime(df['Datum'], format='%d-%m-%Y')
     unique_stocks = df['Product'].unique()
 
-    exchange_codes = ['AS', 'DE', 'XC','MI', 'XD', 'AQ', 'L']
+    exchange_codes = ['AS', 'DE', 'XC', 'MI', 'XD', 'AQ', 'L']
 
     results = []  # List to store results for each stock
     total_worth_all_stocks = 0
@@ -344,12 +349,15 @@ def calculate_multi_year_gain(csv_file) -> dict:
 
     yearly_worths_list = [stock['yearly_worth'] for stock in results]
 
+    if total_realized_gain > 0:
+        total_invested_all_stocks -= total_realized_gain
+
     summary = {
         'total_worth': round(total_worth_all_stocks, 2),
         'total_gain': round(total_gain_all_stocks, 2),
         'total_gain_percentage': round((total_worth_all_stocks / total_invested_all_stocks - 1) * 100, 2),
-        'total_invested_all_stocks': total_invested_all_stocks,
-        'total_realized_gain': total_realized_gain,
+        'total_invested_all_stocks': round(total_invested_all_stocks, 3),
+        'total_realized_gain': round(total_realized_gain, 3),
         'yearly_worths_whole_portfolio': calculate_total_portfolio_yearly_growth(yearly_worths_list),
     }
 
