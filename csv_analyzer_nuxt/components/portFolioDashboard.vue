@@ -8,13 +8,13 @@
           </div>
           <div class="card-body">
             <div class="padding-left-5">
-              <p><strong>Total portfolio worth:</strong> {{ stockData.summary.total_worth }}</p>
-              <p><strong>Total portfolio gain: </strong>
+              <p><strong>Total portfolio worth:</strong> € {{ stockData.summary.total_worth }}</p>
+              <p><strong>Total portfolio gain:  </strong> €
                 <span :style="{ color: stockData.summary.total_gain_percentage < 0 ? 'red' : 'green' }"> {{
                     stockData.summary.total_gain_percentage
                   }} % (€ {{ stockData.summary.total_gain }})</span></p>
-              <p><strong>Total Invested: {{stockData.summary.total_invested_all_stocks}}</strong></p>
-              <p><strong>Total realized gain: {{stockData.summary.total_realized_gain}}</strong></p>
+              <p><strong>Total Invested: € {{stockData.summary.total_invested_all_stocks}}</strong></p>
+              <p><strong>Total realized gain: € {{stockData.summary.total_realized_gain}}</strong></p>
 
               <hr/>
               <LineChart
@@ -42,7 +42,9 @@
                 <p><strong>Total Invested: </strong>€ {{ stock.total_invested.toFixed(2) }}</p>
                 <p><strong>Current Worth: </strong>€ {{ stock.final_worth.toFixed(2) }}</p>
                 <p><strong>Stocks in Possession: </strong>{{ stock.stocks_in_possession }}</p>
-                <p><strong>Realized Gain: </strong>{{ stock.realized_gain }}</p>
+                <p><strong>Realized Gain: </strong>€ {{ stock.realized_gain }}</p>
+                <p><strong>Profit / Loss: </strong>€ {{ stock.realized_profit_or_loss }}</p>
+
               </div>
               <hr/>
 
