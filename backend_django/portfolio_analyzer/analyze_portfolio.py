@@ -339,18 +339,23 @@ def calculate_multi_year_gain(csv_file) -> dict:
         stock_result['total_gain_percent'] = total_gain_percent
         stock_result['total_gain_value'] = total_gain_value
         stock_result['total_invested'] = total_invested
+        stock_result['currently_invested'] = total_invested - realized_gain if (
+                                                                                           total_invested - realized_gain > 0 and all_stocks_owned_today) > 0 else 0
         stock_result['final_worth'] = final_worth
         stock_result['stocks_in_possession'] = all_stocks_owned_today
         stock_result['yearly_gains'] = yearly_gains
         stock_result['yearly_worth'] = calculate_yearly_worth(stock_df, yearly_prices, unique_years)
         stock_result['realized_gain'] = realized_gain
+        stock_result['realized_profit_loss'] = realized_gain - total_invested
+        stock_result['profit_loss'] = round(realized_gain + final_worth - total_invested, 2)
 
         results.append(stock_result)
 
+    # --- Total Stats
     yearly_worths_list = [stock['yearly_worth'] for stock in results]
 
-    if total_realized_gain > 0:
-        total_invested_all_stocks -= total_realized_gain
+    # if total_realized_gain > 0:
+    #     total_invested_all_stocks -= total_realized_gain
 
     summary = {
         'total_worth': round(total_worth_all_stocks, 2),
@@ -359,6 +364,7 @@ def calculate_multi_year_gain(csv_file) -> dict:
         'total_invested_all_stocks': round(total_invested_all_stocks, 3),
         'total_realized_gain': round(total_realized_gain, 3),
         'yearly_worths_whole_portfolio': calculate_total_portfolio_yearly_growth(yearly_worths_list),
+        'total_realized_profit_loss': round(total_realized_gain - total_invested_all_stocks, 3),
     }
 
     return {'results': results, 'summary': summary}
