@@ -1,47 +1,7 @@
 from datetime import date, datetime, timezone
 import time
-import io
-from typing import Optional, Dict, Union, List, Tuple, IO
-import requests
-import json
+from typing import Dict, Union, List
 import pandas as pd
-import yfinance as yf
-
-open_figi_api_key = "paste_open_figi_api_key_here"
-
-
-def check_and_convert_csv_headers(csv_file: IO[str]) -> pd.DataFrame:
-    """
-    The degiro app may export the headers in a different language that may break this script depending on app lanuage.
-    This functions checks if the headers are correct (Dutch) If they are not they convert the headers to Dutch if the
-    length of the headers is the same.
-
-    Raises a ValueError if the CSV file headers are neither matching nor have
-    the same column count as the expected headers.
-
-    Args:
-        csv_file (IO[str]): The input CSV file.
-
-    Returns:
-        pd.DataFrame: A DataFrame with standardized headers.
-    """
-
-    csv_data = csv_file.read().decode('utf-8')
-    df = pd.read_csv(io.StringIO(csv_data))
-
-    expected_headers = ("Datum,Tijd,Product,ISIN,Beurs,Uitvoeringsplaats,Aantal,Koers,,Lokale waarde,,Waarde,,"
-                        "Wisselkoers,Transactiekosten en/of,,Totaal,,Order ID")
-    expected_headers_list = expected_headers.split(',')
-
-    if ','.join(df.columns) == expected_headers:
-        return df
-    elif len(df.columns) == len(expected_headers_list):
-        df.columns = expected_headers_list
-        return df
-    else:
-        raise ValueError(
-            "The CSV file headers are not as expected and their count does not match the expected headers.")
-
 
 def isin_to_ticker(openfigi_apikey: str, isin: str) -> Optional[str]:
     """
@@ -108,6 +68,8 @@ def fetch_yearly_stock_prices(ticker: str, unique_years: List[int]) -> Dict[int,
             }
 
     return yearly_prices
+from .stockdata_fetchers import fetch_yearly_stock_prices, isin_to_ticker, check_and_convert_csv_headers, \
+    open_figi_api_key
 
 
 def populate_unique_years(stock_df: pd.DataFrame) -> List[int]:
@@ -123,23 +85,55 @@ def populate_unique_years(stock_df: pd.DataFrame) -> List[int]:
     return sorted(set(all_years + unique_years))
 
 
-def calculate_current_worth(stock_df: pd.DataFrame, final_stock_price: float) -> Tuple[float, float, float]:
+def calculate_total_stocks_owned(stock_df: pd.DataFrame) -> float:
     """
-    Calculates the total gain percentual, total gain value and total worth of a stock based on the price and
-    amount of stock owned
+    Calculates the total number of stocks owned today.
+    :param stock_df: CSV file contents for a specific stock in dataframe format
+    :return: Total stocks owned today (float)
+    """
+    return stock_df['Aantal'].sum()
+
+
+def calculate_total_gain_value(stock_df: pd.DataFrame, final_stock_price: float) -> float:
+    """
+    Calculates the total gain value for a specific stock.
     :param stock_df: CSV file contents for a specific stock in dataframe format
     :param final_stock_price: Stock price at the point we are calculating for
-    :return: A list containing the three return values (floats)
+    :return: Total gain value (float)
     """
-    all_stocks_owned_today = stock_df['Aantal'].sum()
-    final_worth = final_stock_price * all_stocks_owned_today  # Worth of stocks today
+    all_stocks_owned_today = calculate_total_stocks_owned(stock_df)
+    final_worth = final_stock_price * all_stocks_owned_today
     total_invested_all_time = stock_df[stock_df['Waarde'] < 0]['Waarde'].sum() * -1
     realized_gain = stock_df[stock_df['Waarde'] > 0]['Waarde'].sum()
-    # TODO add logic that includes sold assets in the final worth calculation times sold price
-    total_gain_value = final_worth + realized_gain - total_invested_all_time
-    total_gain_percent = (((final_worth + realized_gain) / total_invested_all_time) - 1) * 100 if \
-        total_invested_all_time != 0 else 0
-    return total_gain_percent, total_gain_value, final_worth
+    return final_worth + realized_gain - total_invested_all_time
+
+
+def calculate_total_gain_percent(stock_df: pd.DataFrame, final_stock_price: float) -> float:
+    """
+    Calculates the total gain percentage for a specific stock.
+    :param stock_df: CSV file contents for a specific stock in dataframe format
+    :param final_stock_price: Stock price at the point we are calculating for
+    :return: Total gain percent (float)
+    """
+    all_stocks_owned_today = calculate_total_stocks_owned(stock_df)
+    final_worth = final_stock_price * all_stocks_owned_today
+    total_invested_all_time = stock_df[stock_df['Waarde'] < 0]['Waarde'].sum() * -1
+    realized_gain = stock_df[stock_df['Waarde'] > 0]['Waarde'].sum()
+    if total_invested_all_time != 0:
+        return (((final_worth + realized_gain) / total_invested_all_time) - 1) * 100
+    else:
+        return 0
+
+
+def calculate_final_worth(stock_df: pd.DataFrame, final_stock_price: float) -> float:
+    """
+    Calculates the final worth for a specific stock.
+    :param stock_df: CSV file contents for a specific stock in dataframe format
+    :param final_stock_price: Stock price at the point we are calculating for
+    :return: Final worth of the stock (float)
+    """
+    all_stocks_owned_today = calculate_total_stocks_owned(stock_df)
+    return final_stock_price * all_stocks_owned_today
 
 
 def calculate_yearly_gains(stock_df: pd.DataFrame, yearly_prices: Dict[int, Dict[str, Union[float, None]]],
@@ -289,18 +283,11 @@ def calculate_multi_year_gain(csv_file) -> dict:
     exchange_codes = ['AS', 'DE', 'XC', 'MI', 'XD', 'AQ', 'L']
 
     results = []  # List to store results for each stock
-    total_worth_all_stocks = 0
-    total_gain_all_stocks = 0
-    total_invested_all_stocks = 0
-    total_realized_gain = 0
 
     for stock in unique_stocks:
         stock_result = {}  # Dictionary to store results for the current stock
 
         stock_df = df[df['Product'] == stock]
-
-        realized_gain = calculate_realized_gain(stock_df)
-        total_realized_gain += realized_gain
 
         isin = stock_df['ISIN'].iloc[0]
         ticker = isin_to_ticker(open_figi_api_key, isin)
@@ -323,20 +310,17 @@ def calculate_multi_year_gain(csv_file) -> dict:
         if not yearly_prices:
             continue
 
-        final_stock_price = yearly_prices[unique_years[-1]]['end_price']
+        final_stock_price = yearly_prices[unique_years[-1]]['end_price']  # stock price today
 
-        total_gain_percent, total_gain_value, final_worth = calculate_current_worth(stock_df, final_stock_price)
+        total_gain_percent = calculate_total_gain_percent(stock_df, final_stock_price)
+        total_gain_value = calculate_total_gain_value(stock_df, final_stock_price)
+        final_worth = calculate_final_worth(stock_df, final_stock_price)
 
-        total_worth_all_stocks += final_worth
-        total_gain_all_stocks += total_gain_value
-
+        realized_gain = calculate_realized_gain(stock_df)
         yearly_gains = calculate_yearly_gains(stock_df, yearly_prices, unique_years)
 
         all_stocks_owned_today = stock_df['Aantal'].sum()
         total_invested = stock_df[stock_df['Waarde'] < 0]['Waarde'].sum() * -1
-
-        if total_invested > 0:
-            total_invested_all_stocks += total_invested
 
         stock_result['stock_name'] = stock
         stock_result['total_gain_percent'] = total_gain_percent
@@ -357,9 +341,12 @@ def calculate_multi_year_gain(csv_file) -> dict:
     # --- Total Stats
     yearly_worths_list = [stock['yearly_worth'] for stock in results]
 
-    # if total_realized_gain > 0:
-    #     total_invested_all_stocks -= total_realized_gain
+    total_invested_all_stocks = sum(stock['total_invested'] for stock in results if stock['total_invested'] > 0)
+    total_gain_all_stocks = sum(stock['total_gain_value'] for stock in results)
     total_gain_percentage = round((total_gain_all_stocks / total_invested_all_stocks) * 100, 2)
+    total_realized_gain = sum(stock['realized_gain'] for stock in results)
+
+    total_worth_all_stocks = sum(stock['final_worth'] for stock in results)
 
     summary = {
         'total_worth': round(total_worth_all_stocks, 2),
