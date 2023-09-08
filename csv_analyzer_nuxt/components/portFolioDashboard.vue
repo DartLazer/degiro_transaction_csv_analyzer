@@ -15,12 +15,13 @@
                 <span :style="{ color: stockData.summary.total_gain_percentage < 0 ? 'red' : 'green' }"> {{
                     stockData.summary.total_gain_percentage
                   }} % (€ {{ stockData.summary.total_gain }})</span></p>
-              <hr />
+              <hr/>
               <p><strong>Total all-time Invested:</strong> € {{ stockData.summary.total_invested_all_stocks }}</p>
-              <p v-if="stockData.summary.total_realized_gain"><strong>Total realized gain:</strong> € {{ stockData.summary.total_realized_gain }}</p>
+              <p v-if="stockData.summary.total_realized_gain"><strong>Total realized gain:</strong> €
+                {{ stockData.summary.total_realized_gain }}</p>
               <p v-if="stockData.summary.total_realized_profit_loss > 0"><strong>Total realized profit:</strong> €
                 {{ stockData.summary.total_realized_profit_loss }}</p>
-              <hr />
+              <hr/>
               <p><strong>Total Virtual Profit/Loss: €</strong> {{
                   ((stockData.summary.total_worth + stockData.summary.total_realized_gain) - stockData.summary.total_invested_all_stocks).toFixed(2)
                 }}</p>
@@ -42,6 +43,7 @@
             </div>
             <div class="card-body">
               <div class="padding-left-5">
+                <p v-if="stock.error">{{ stock.error }}</p>
                 <p><strong>Total Gain: </strong>
                   <span :style="{ color: stock.total_gain_percent < 0 ? 'red' : 'green' }">
                   {{ stock.total_gain_percent.toFixed(1) }} % (€ {{ stock.total_gain_value.toFixed(2) }})
@@ -113,8 +115,8 @@ const props = defineProps({
 
 const checkIfChartDataEmpty = function (chartDataValues) {
   let allValuesZero = true;
-  for (const timestampValue of chartDataValues){
-    if (timestampValue !== 0){
+  for (const timestampValue of chartDataValues) {
+    if (timestampValue !== 0) {
       return false;
     }
   }
