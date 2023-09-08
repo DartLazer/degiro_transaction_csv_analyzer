@@ -2,6 +2,8 @@
   <div>
     <div class="row">
       <div class="col-md-12">
+
+        <!-- Total Portfolio Overview Section -->
         <div class="card mb-3">
           <div class="card-header">
             <h4 class="pt-2">Portfolio Overview</h4>
@@ -13,12 +15,14 @@
                 <span :style="{ color: stockData.summary.total_gain_percentage < 0 ? 'red' : 'green' }"> {{
                     stockData.summary.total_gain_percentage
                   }} % (€ {{ stockData.summary.total_gain }})</span></p>
-              <p><strong>Total Invested:</strong> € {{ stockData.summary.total_invested_all_stocks }}</p>
-              <p><strong>Total realized gain:</strong> € {{ stockData.summary.total_realized_gain }}</p>
+              <hr />
+              <p><strong>Total all-time Invested:</strong> € {{ stockData.summary.total_invested_all_stocks }}</p>
+              <p v-if="stockData.summary.total_realized_gain"><strong>Total realized gain:</strong> € {{ stockData.summary.total_realized_gain }}</p>
               <p v-if="stockData.summary.total_realized_profit_loss > 0"><strong>Total realized profit:</strong> €
                 {{ stockData.summary.total_realized_profit_loss }}</p>
-              <p><strong>Total Virtual Profit/Loss</strong> {{
-                  (stockData.summary.total_worth + stockData.summary.total_realized_gain) - stockData.summary.total_invested_all_stocks
+              <hr />
+              <p><strong>Total Virtual Profit/Loss: €</strong> {{
+                  ((stockData.summary.total_worth + stockData.summary.total_realized_gain) - stockData.summary.total_invested_all_stocks).toFixed(2)
                 }}</p>
 
               <hr/>
@@ -29,6 +33,8 @@
             </div>
           </div>
         </div>
+
+        <!-- Card per stock/etf -->
         <div v-for="stock in stockData.results" :key="stock.stock_name">
           <div class="card mb-3">
             <div class="card-header">
